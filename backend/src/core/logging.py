@@ -2,6 +2,7 @@ import json
 import logging
 import logging.handlers
 import os
+import sys
 from contextvars import ContextVar
 from datetime import datetime, timezone
 
@@ -39,6 +40,46 @@ class JsonFormatter(logging.Formatter):
         return json.dumps(payload, default=str)
 
 
+class ColorFormatter(logging.Formatter):
+    RESET = "\033[0m"
+    DIM = "\033[2m"
+
+    LEVEL_COLORS = {
+        logging.DEBUG: "\033[36m",
+        logging.INFO: "\033[32m",
+        logging.WARNING: "\033[33m",
+        logging.ERROR: "\033[31m",
+        logging.CRITICAL: "\033[1;31m",
+    }
+    ROLE_COLORS = {
+        "human": "\033[34m",
+        "ai": "\033[35m",
+        "tool": "\033[36m",
+    }
+
+    def format(self, record: logging.LogRecord) -> str:
+        role = getattr(record, "role", None)
+        color = self.ROLE_COLORS.get(role) or self.LEVEL_COLORS.get(record.levelno, "")
+        timestamp = datetime.fromtimestamp(record.created, tz=timezone.utc).strftime("%H:%M:%S")
+        session_id = getattr(record, "session_id", "-")
+        prefix = (
+            f"{self.DIM}{timestamp} [{session_id}]{self.RESET} "
+            f"{color}{record.levelname:<8}{self.RESET}"
+        )
+
+        if role:
+            line = f"{prefix} {color}{role}{self.RESET}: {record.getMessage()}"
+            tool_calls = getattr(record, "tool_calls", None)
+            if tool_calls:
+                line += f" {self.DIM}tool_calls={tool_calls}{self.RESET}"
+        else:
+            line = f"{prefix} {record.name}: {record.getMessage()}"
+
+        if record.exc_info:
+            line += "\n" + self.formatException(record.exc_info)
+        return line
+
+
 def configure_logging() -> None:
     root = logging.getLogger()
     root.setLevel(logging.INFO)
@@ -48,15 +89,16 @@ def configure_logging() -> None:
     session_filter = SessionIdFilter()
 
     stream_handler = logging.StreamHandler()
-    stream_handler.setFormatter(formatter)
+    stream_handler.setFormatter(ColorFormatter() if sys.stdout.isatty() else formatter)
     stream_handler.addFilter(session_filter)
     root.addHandler(stream_handler)
 
     os.makedirs(settings.log_dir, exist_ok=True)
-    file_handler = logging.handlers.RotatingFileHandler(
+    file_handler = logging.handlers.TimedRotatingFileHandler(
         os.path.join(settings.log_dir, settings.log_file),
-        maxBytes=10 * 1024 * 1024,
-        backupCount=5,
+        when="midnight",
+        backupCount=settings.log_retention_days,
+        utc=True,
     )
     file_handler.setFormatter(formatter)
     file_handler.addFilter(session_filter)

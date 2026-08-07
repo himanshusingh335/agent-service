@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class ChatRequest(BaseModel):
@@ -30,3 +30,21 @@ class HistoryMessage(BaseModel):
 class ChatHistoryResponse(BaseModel):
     session_id: str
     messages: list[HistoryMessage]
+
+
+class LogEntry(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    timestamp: str
+    level: str
+    logger: str
+    session_id: str
+    message: str
+
+
+class SessionLogsResponse(BaseModel):
+    session_id: str
+    logs: list[LogEntry]
+    total: int
+    limit: int
+    offset: int

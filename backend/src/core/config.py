@@ -17,6 +17,7 @@ class Settings(BaseSettings):
 
     log_dir: str = "logs"
     log_file: str = "app.log"
+    log_retention_days: int = 30
 
     mcp_config_path: str = "mcp_servers.json"
 
