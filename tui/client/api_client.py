@@ -42,5 +42,31 @@ class AgentServiceClient:
                     yield event, chunk
                     event = "message"
 
+    def get_history(self, session_id: str) -> dict[str, Any]:
+        response = self._client.get(f"/chat/{session_id}/history")
+        response.raise_for_status()
+        return response.json()
+
+    def get_logs(
+        self,
+        session_id: str,
+        *,
+        level: str | None = None,
+        start_time: str | None = None,
+        end_time: str | None = None,
+        limit: int = 200,
+        offset: int = 0,
+    ) -> dict[str, Any]:
+        params: dict[str, Any] = {"limit": limit, "offset": offset}
+        if level:
+            params["level"] = level
+        if start_time:
+            params["start_time"] = start_time
+        if end_time:
+            params["end_time"] = end_time
+        response = self._client.get(f"/chat/{session_id}/logs", params=params)
+        response.raise_for_status()
+        return response.json()
+
     def close(self) -> None:
         self._client.close()
