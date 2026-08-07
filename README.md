@@ -7,6 +7,8 @@ conversation checkpointing, plus a terminal client (TUI) to talk to it.
 
 - `backend/` — the agent API (FastAPI + LangGraph + Postgres).
 - `tui/` — a terminal chat client (`rich` + `httpx`).
+- `task-service/` — a FastAPI + SQLite task tracker, exposed as an MCP server (`fastapi-mcp`) and
+  used as a tool source by the agent.
 
 Both use a single conda-created virtualenv at the repo root (`.venv`), managed with `pip`.
 
@@ -29,7 +31,23 @@ python src/main.py            # runs the API on http://localhost:8000
 
 Optional: to give the agent MCP tools, copy `mcp_servers.example.json` to `mcp_servers.json` and
 configure your servers (see the file for the format). If it's absent, the agent runs with local
-tools only.
+tools only. By default this points at `task-service` (below) — start that first so the agent's
+`add_task`/`remove_task` tools resolve at startup.
+
+## Task service
+
+```bash
+cd task-service
+pip install -r requirements.txt
+cp .env.example .env          # optional, defaults are fine
+python src/main.py            # runs on http://localhost:8010
+```
+
+Exposes two endpoints (`POST /tasks`, `DELETE /tasks/{task_id}`), backed by a local SQLite file
+(`tasks.db`), and auto-mounts an MCP server at `/mcp` via `fastapi-mcp` — each endpoint's
+`operation_id` (`add_task`, `remove_task`) becomes the MCP tool name. Point `backend`'s
+`mcp_servers.json` at `http://localhost:8010/mcp` (`streamable_http` transport) to wire it into
+the agent.
 
 ## TUI
 

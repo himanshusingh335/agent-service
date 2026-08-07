@@ -8,9 +8,27 @@ class ChatRequest(BaseModel):
     message: str
 
 
+class PendingAction(BaseModel):
+    name: str
+    args: dict
+    description: str | None = None
+
+
 class ChatResponse(BaseModel):
     session_id: str
-    reply: str
+    reply: str | None = None
+    pending_actions: list[PendingAction] | None = None
+
+
+class Decision(BaseModel):
+    type: Literal["approve", "reject"]
+    message: str | None = None
+    """Explanation shown to the model when `type` is `reject`."""
+
+
+class ResumeRequest(BaseModel):
+    session_id: str
+    decisions: list[Decision]
 
 
 class ToolCallInfo(BaseModel):

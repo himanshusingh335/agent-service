@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 import uuid
@@ -10,6 +11,29 @@ from rich.prompt import Prompt
 from api_client import AgentServiceClient
 
 console = Console()
+
+
+def _handle_pending(client: AgentServiceClient, session_id: str, pending_actions: list[dict]) -> str | None:
+    """Prompt for approve/reject on each pending action, resuming until the run finishes."""
+    while pending_actions:
+        decisions = []
+        for action in pending_actions:
+            console.print(
+                f"\n[bold yellow]approval required[/bold yellow] — "
+                f"{action['name']}({action['args']})"
+            )
+            if action.get("description"):
+                console.print(f"[dim]{action['description']}[/dim]")
+            approved = Prompt.ask(
+                "[bold cyan]approve?[/bold cyan]", choices=["y", "n"], default="n"
+            )
+            decisions.append({"type": "approve" if approved == "y" else "reject"})
+
+        result = client.resume(session_id, decisions)
+        pending_actions = result.get("pending_actions") or []
+        if not pending_actions:
+            return result.get("reply")
+    return None
 
 
 def main() -> None:
@@ -49,12 +73,25 @@ def main() -> None:
             console.print("[bold magenta]agent>[/bold magenta] ", end="")
             try:
                 if mode == "stream":
-                    for chunk in client.stream(session_id, message):
-                        console.print(chunk, end="")
+                    pending_actions = None
+                    for event, chunk in client.stream(session_id, message):
+                        if event == "interrupt":
+                            pending_actions = json.loads(chunk)
+                        else:
+                            console.print(chunk, end="")
                     console.print()
+                    if pending_actions:
+                        reply = _handle_pending(client, session_id, pending_actions)
+                        if reply:
+                            console.print(reply)
                 else:
-                    reply = client.invoke(session_id, message)
-                    console.print(reply)
+                    result = client.invoke(session_id, message)
+                    if result.get("pending_actions"):
+                        reply = _handle_pending(client, session_id, result["pending_actions"])
+                        if reply:
+                            console.print(reply)
+                    else:
+                        console.print(result.get("reply") or "")
             except Exception as exc:
                 console.print(f"\n[bold red]error:[/bold red] {exc}")
     finally:

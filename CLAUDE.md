@@ -4,10 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository layout
 
-This repo has two independent Python projects, each with its own `requirements.txt`, sharing the repo-root `.venv`:
+This repo has three independent Python projects, each with its own `requirements.txt`, sharing the repo-root `.venv`:
 
 - `backend/` — a FastAPI service wrapping a LangGraph/LangChain agent (Groq-hosted LLM), with Postgres-backed conversation checkpointing.
 - `tui/` — a minimal terminal client (`rich` + `httpx`) that talks to the backend over HTTP/SSE.
+- `task-service/` — a small FastAPI + SQLite task tracker (`add_task`/`remove_task`), self-exposed as an MCP server via `fastapi-mcp` (mounted at `/mcp`, tool names come from each route's `operation_id`). The backend agent consumes it as an MCP tool source — see `backend/mcp_servers.json`.
 
 ## Commands
 
@@ -37,6 +38,17 @@ cd tui
 pip install -r requirements.txt
 python client/main.py         # connects to AGENT_SERVICE_URL (default http://localhost:8000)
 ```
+
+### Task service
+
+```bash
+conda activate ./.venv        # or: source .venv/bin/activate
+cd task-service
+pip install -r requirements.txt
+python src/main.py            # runs on http://localhost:8010, SQLite file at settings.db_path
+```
+
+Start this before the backend if you want `add_task`/`remove_task` tools available — `backend/mcp_servers.json` points at it by default.
 
 ## Architecture
 
