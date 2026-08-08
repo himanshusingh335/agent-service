@@ -4,7 +4,7 @@
 
 This repo has three independent Python projects, each with its own `requirements.txt`, sharing the repo-root `.venv`:
 
-- `backend/` — a FastAPI service wrapping a LangGraph/LangChain agent (Groq-hosted LLM), with Postgres-backed conversation checkpointing.
+- `backend/` — a FastAPI service wrapping a LangGraph/LangChain agent (OpenRouter-hosted LLM), with Postgres-backed conversation checkpointing.
 - `tui/` — a minimal terminal client (`rich` + `httpx`) that talks to the backend over HTTP/SSE.
 - `task-service/` — a small FastAPI + SQLite task tracker (`add_task`/`remove_task`), self-exposed as an MCP server via `fastapi-mcp` (mounted at `/mcp`, tool names come from each route's `operation_id`). The backend agent consumes it as an MCP tool source — see `backend/mcp_servers.json`.
 
@@ -24,7 +24,7 @@ docker compose up -d          # starts Postgres on localhost:5432
 python src/main.py            # runs the API (uses .env via pydantic-settings)
 ```
 
-- Config comes from `backend/.env` (copy from `.env.example`); required var is `GROQ_API_KEY`.
+- Config comes from `backend/.env` (copy from `.env.example`); required var is `OPENROUTER_API_KEY`.
 - No test suite or linter is currently configured in this repo.
 - MCP tools are optionally loaded from `backend/mcp_servers.json` (gitignored; see `mcp_servers.example.json` for format). If the file is absent, the agent runs with local tools only.
 

@@ -1,5 +1,5 @@
 from langchain.agents import create_agent
-from langchain_groq import ChatGroq
+from langchain_openrouter import ChatOpenRouter
 
 from agent.mcp import load_mcp_tools
 from agent.middleware import build_human_in_the_loop_middleware, build_summarization_middleware
@@ -18,7 +18,13 @@ SYSTEM_PROMPT = (
 )
 
 async def build_agent(checkpointer):
-    model = ChatGroq(model=settings.groq_model, api_key=settings.groq_api_key)
+    reasoning = {"effort": settings.openrouter_reasoning_effort} if settings.openrouter_reasoning_effort else None
+    model = ChatOpenRouter(
+        model=settings.openrouter_model,
+        api_key=settings.openrouter_api_key,
+        temperature=settings.openrouter_temperature,
+        reasoning=reasoning,
+    )
 
     mcp_tools = await load_mcp_tools()
     tools = [*LOCAL_TOOLS, *mcp_tools]

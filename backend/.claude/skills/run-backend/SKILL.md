@@ -1,6 +1,6 @@
 ---
 name: run-backend
-description: Build, run, and smoke-test the backend agent service — FastAPI wrapping a LangGraph/LangChain agent (Groq LLM), Postgres checkpointing, MCP tool loading, SSE streaming, and human-in-the-loop tool approval. Use when asked to run, start, launch, test, or verify the backend, or to check /chat/invoke, /chat/stream, /chat/resume, history, or logs endpoints.
+description: Build, run, and smoke-test the backend agent service — FastAPI wrapping a LangGraph/LangChain agent (OpenRouter LLM), Postgres checkpointing, MCP tool loading, SSE streaming, and human-in-the-loop tool approval. Use when asked to run, start, launch, test, or verify the backend, or to check /chat/invoke, /chat/stream, /chat/resume, history, or logs endpoints.
 ---
 
 Paths below are relative to `backend/` (this skill's grandparent directory).
@@ -20,8 +20,8 @@ cd backend
 pip install -r requirements.txt
 ```
 
-Needs `backend/.env` (copy from `.env.example`) with a real `GROQ_API_KEY` —
-there is no offline/mock mode; every chat turn calls the live Groq API.
+Needs `backend/.env` (copy from `.env.example`) with a real `OPENROUTER_API_KEY` —
+there is no offline/mock mode; every chat turn calls the live OpenRouter API.
 Needs Docker for Postgres (`docker compose up -d`, `docker-compose.yml` in
 this directory).
 
@@ -134,5 +134,5 @@ talk to it (see `tui/.claude/skills/run-tui/` for the interactive client).
   failed` right after startup — task-service wasn't up yet when the
   backend's lifespan tried to load MCP tools. Start task-service first
   and poll it healthy before starting the backend.
-- `curl` hangs on `/chat/invoke` — check Groq API reachability/API key;
-  every turn makes a live call to `https://api.groq.com`.
+- `curl` hangs on `/chat/invoke` — check OpenRouter API reachability/API key;
+  every turn makes a live call to `https://openrouter.ai`.

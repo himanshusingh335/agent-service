@@ -19,7 +19,7 @@ pip install -r requirements.txt
 brew install tmux   # only if not already installed; verified working at 3.7b
 ```
 
-Also needs `backend/.env` with a real `GROQ_API_KEY`, and Docker for the
+Also needs `backend/.env` with a real `OPENROUTER_API_KEY`, and Docker for the
 backend's Postgres — see `backend/.claude/skills/run-backend/SKILL.md`.
 
 ## Run (agent path) — driver.sh
@@ -109,7 +109,7 @@ Useless headless/non-interactively — `Prompt.ask` blocks on a real TTY.
 
 - `tmux: command not found` — not installed; `brew install tmux`.
 - Pane shows nothing after `send-keys` — increase the `sleep` before
-  `capture-pane`; Groq API calls in the chat flow can take a few seconds,
+  `capture-pane`; OpenRouter API calls in the chat flow can take a few seconds,
   and the HITL approval round-trip (delete → interrupt → resume) took
   ~4s in this session.
 - `rich.errors.MarkupError` crashing `logs` mid-view — see the

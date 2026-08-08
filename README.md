@@ -1,6 +1,6 @@
 # agent-service
 
-A FastAPI service wrapping a LangGraph/LangChain agent (Groq-hosted LLM) with Postgres-backed
+A FastAPI service wrapping a LangGraph/LangChain agent (OpenRouter-hosted LLM) with Postgres-backed
 conversation checkpointing, plus a terminal client (TUI) to talk to it.
 
 ## Layout
@@ -24,7 +24,7 @@ conda activate ./.venv
 ```bash
 cd backend
 pip install -r requirements.txt
-cp .env.example .env          # fill in GROQ_API_KEY
+cp .env.example .env          # fill in OPENROUTER_API_KEY
 docker compose up -d          # starts Postgres on localhost:5432
 python src/main.py            # runs the API on http://localhost:8000
 ```
