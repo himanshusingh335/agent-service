@@ -138,7 +138,9 @@ def view_logs(client: AgentServiceClient) -> None:
         ts = entry.get("timestamp", "")
         lvl = entry.get("level", "")
         msg = entry.get("message", "")
-        console.print(f"[dim]{ts}[/dim] [{lvl}] {msg}")
+        role = entry.get("role")
+        prefix = f" [{ROLE_STYLE.get(role, '')}]{role}:[/{ROLE_STYLE.get(role, '')}]" if role else ""
+        console.print(f"[dim]{ts}[/dim] [{lvl}]{prefix} {msg}")
     console.print(f"\n[dim]showing {len(logs)} of {result.get('total', len(logs))} entries[/dim]\n")
 
 
