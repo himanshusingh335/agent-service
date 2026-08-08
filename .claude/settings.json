@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(aws ec2 describe-*)",
+      "Bash(aws ecs describe-*)",
+      "mcp__reference-langchain__search_api",
+      "mcp__docs-langchain__search_docs_by_lang_chain",
+      "Bash(aws ec2 wait *)",
+      "Bash(aws ecs list-*)",
+      "Bash(aws s3api list-*)",
+      "Bash(aws iam list-*)",
+      "Bash(docker compose ps*)",
+      "Bash(aws sts get-caller-identity*)",
+      "Bash(aws iam get-*)",
+      "mcp__reference-langchain__get_symbol"
+    ]
+  }
+}
