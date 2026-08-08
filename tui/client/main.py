@@ -6,6 +6,7 @@ import uuid
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from rich.console import Console
+from rich.markup import escape
 from rich.prompt import Prompt
 
 from api_client import AgentServiceClient
@@ -146,8 +147,11 @@ def view_logs(client: AgentServiceClient) -> None:
         msg = entry.get("message", "")
         role = entry.get("role")
         style = ROLE_STYLE.get(role)
-        prefix = f" [{style}]{role}:[/{style}]" if role and style else f" {role}:" if role else ""
-        console.print(f"[dim]{ts} [{logger_name}][/dim] [{lvl}]{prefix} {msg}")
+        prefix = f" [{style}]{escape(role)}:[/{style}]" if role and style else f" {escape(role)}:" if role else ""
+        console.print(
+            f"[dim]{escape(ts)} {escape(f'[{logger_name}]')}[/dim]"
+            f" {escape(f'[{lvl}]')}{prefix} {escape(msg)}"
+        )
     console.print(f"\n[dim]showing {len(logs)} of {result.get('total', len(logs))} entries[/dim]\n")
 
 
