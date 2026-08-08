@@ -6,8 +6,6 @@ class Settings(BaseSettings):
 
     openrouter_api_key: str
     openrouter_model: str = "anthropic/claude-sonnet-4.5"
-    openrouter_temperature: float | None = None
-    openrouter_reasoning_effort: str | None = None
 
     database_url: str = "postgresql://postgres:postgres@localhost:5432/agent_service"
 

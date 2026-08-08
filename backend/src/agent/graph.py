@@ -18,12 +18,11 @@ SYSTEM_PROMPT = (
 )
 
 async def build_agent(checkpointer):
-    reasoning = {"effort": settings.openrouter_reasoning_effort} if settings.openrouter_reasoning_effort else None
     model = ChatOpenRouter(
         model=settings.openrouter_model,
         api_key=settings.openrouter_api_key,
-        temperature=settings.openrouter_temperature,
-        reasoning=reasoning,
+        temperature=0,
+        reasoning={"effort": "medium"},
     )
 
     mcp_tools = await load_mcp_tools()
