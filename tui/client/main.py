@@ -12,7 +12,7 @@ from api_client import AgentServiceClient
 
 console = Console()
 
-ROLE_STYLE = {"user": "bold green", "ai": "bold magenta", "tool": "dim"}
+ROLE_STYLE = {"user": "bold green", "human": "bold green", "ai": "bold magenta", "tool": "dim"}
 
 
 def _handle_pending(client: AgentServiceClient, session_id: str, pending_actions: list[dict]) -> str | None:
@@ -139,7 +139,8 @@ def view_logs(client: AgentServiceClient) -> None:
         lvl = entry.get("level", "")
         msg = entry.get("message", "")
         role = entry.get("role")
-        prefix = f" [{ROLE_STYLE.get(role, '')}]{role}:[/{ROLE_STYLE.get(role, '')}]" if role else ""
+        style = ROLE_STYLE.get(role)
+        prefix = f" [{style}]{role}:[/{style}]" if role and style else f" {role}:" if role else ""
         console.print(f"[dim]{ts}[/dim] [{lvl}]{prefix} {msg}")
     console.print(f"\n[dim]showing {len(logs)} of {result.get('total', len(logs))} entries[/dim]\n")
 
