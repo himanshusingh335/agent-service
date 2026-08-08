@@ -7,15 +7,27 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from prompt_toolkit import prompt as pt_prompt
 from prompt_toolkit.completion import Completer, Completion, FuzzyCompleter
-from rich.console import Console
+from rich.console import Console, Group
+from rich.json import JSON
 from rich.markup import escape
+from rich.panel import Panel
 from rich.prompt import Prompt
+from rich.text import Text
 
 from api_client import AgentServiceClient
 
 console = Console()
 
 ROLE_STYLE = {"user": "bold green", "human": "bold green", "ai": "bold magenta", "tool": "dim"}
+
+
+def _tool_panel(name: str, args: dict, response: str | None) -> Panel:
+    body = [JSON.from_data(args)]
+    if response is not None:
+        body.append(Text(f"-> {response}", style="dim"))
+    return Panel(
+        Group(*body), title=f"[bold cyan]{name}[/bold cyan]", border_style="cyan", expand=False
+    )
 
 
 class _SessionCompleter(Completer):
@@ -104,9 +116,22 @@ def run_chat(client: AgentServiceClient) -> None:
         try:
             if mode == "stream":
                 pending_actions = None
+                pending_calls: dict[str, dict] = {}
                 for event, chunk in client.stream(session_id, message):
                     if event == "interrupt":
                         pending_actions = json.loads(chunk)
+                    elif event == "tool_call":
+                        for call in json.loads(chunk):
+                            pending_calls[call["id"]] = call
+                            console.print(f"\n[dim]calling {call['name']}...[/dim]")
+                        console.print("[bold magenta]agent>[/bold magenta] ", end="")
+                    elif event == "tool_result":
+                        console.print()
+                        for result_data in json.loads(chunk):
+                            call = pending_calls.pop(result_data["id"], None)
+                            if call:
+                                console.print(_tool_panel(call["name"], call["args"], result_data["response"]))
+                        console.print("[bold magenta]agent>[/bold magenta] ", end="")
                     else:
                         console.print(chunk, end="")
                 console.print()
@@ -116,6 +141,11 @@ def run_chat(client: AgentServiceClient) -> None:
                         console.print(reply)
             else:
                 result = client.invoke(session_id, message)
+                if result.get("tool_calls"):
+                    console.print()
+                    for call in result["tool_calls"]:
+                        console.print(_tool_panel(call["name"], call["args"], call.get("response")))
+                    console.print("[bold magenta]agent>[/bold magenta] ", end="")
                 if result.get("pending_actions"):
                     reply = _handle_pending(client, session_id, result["pending_actions"])
                     if reply:

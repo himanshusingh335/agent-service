@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 from langgraph.types import Command, Interrupt
 from sse_starlette.sse import EventSourceResponse
 
-from agent.transcript import log_new_messages
+from agent.transcript import extract_tool_calls, log_new_messages
 from api.deps import get_agent
 from api.schemas import ChatRequest, ChatResponse, PendingAction, ResumeRequest
 from core.logging import session_id_var
@@ -29,12 +29,13 @@ def _pending_actions(interrupts: tuple[Interrupt, ...]) -> list[PendingAction] |
     return actions or None
 
 
-async def _finish(agent, session_id: str, result: dict) -> ChatResponse:
+async def _finish(agent, session_id: str, result: dict, prev_len: int) -> ChatResponse:
     state = await agent.aget_state(_config(session_id))
+    tool_calls = extract_tool_calls(result["messages"][prev_len:]) or None
     if pending := _pending_actions(state.interrupts):
-        return ChatResponse(session_id=session_id, pending_actions=pending)
+        return ChatResponse(session_id=session_id, pending_actions=pending, tool_calls=tool_calls)
     reply = str(result["messages"][-1].text)
-    return ChatResponse(session_id=session_id, reply=reply)
+    return ChatResponse(session_id=session_id, reply=reply, tool_calls=tool_calls)
 
 
 @router.post("/invoke", response_model=ChatResponse)
@@ -48,7 +49,7 @@ async def invoke(request: ChatRequest, agent=Depends(get_agent)):
         result = await agent.ainvoke(_inputs(request.message), config=config)
 
         log_new_messages(result["messages"], prev_len)
-        return await _finish(agent, request.session_id, result)
+        return await _finish(agent, request.session_id, result, prev_len)
     finally:
         session_id_var.reset(token)
 
@@ -68,7 +69,7 @@ async def resume(request: ResumeRequest, agent=Depends(get_agent)):
         result = await agent.ainvoke(Command(resume=resume_payload), config=config)
 
         log_new_messages(result["messages"], prev_len)
-        return await _finish(agent, request.session_id, result)
+        return await _finish(agent, request.session_id, result, prev_len)
     finally:
         session_id_var.reset(token)
 
@@ -90,8 +91,27 @@ async def stream(request: ChatRequest, agent=Depends(get_agent)):
                     if text_delta:
                         yield {"data": text_delta}
 
+                output = await message.output
+                if output.tool_calls:
+                    yield {
+                        "event": "tool_call",
+                        "data": json.dumps(
+                            [
+                                {"id": tc["id"], "name": tc["name"], "args": tc["args"]}
+                                for tc in output.tool_calls
+                            ]
+                        ),
+                    }
+
             final_state = await agent.aget_state(config)
+            new_messages = final_state.values.get("messages", [])[prev_len:]
             log_new_messages(final_state.values.get("messages", []), prev_len)
+
+            if resolved := [tc for tc in extract_tool_calls(new_messages) if tc.response is not None]:
+                yield {
+                    "event": "tool_result",
+                    "data": json.dumps([{"id": tc.id, "response": tc.response} for tc in resolved]),
+                }
 
             if pending := _pending_actions(final_state.interrupts):
                 yield {

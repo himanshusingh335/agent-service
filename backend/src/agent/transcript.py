@@ -2,6 +2,8 @@ import logging
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
 
+from api.schemas import ToolCallResult
+
 transcript_logger = logging.getLogger("task-agent")
 
 
@@ -26,3 +28,23 @@ def log_message(message: BaseMessage) -> None:
 def log_new_messages(messages: list[BaseMessage], prev_len: int) -> None:
     for message in messages[prev_len:]:
         log_message(message)
+
+
+def extract_tool_calls(messages: list[BaseMessage]) -> list[ToolCallResult]:
+    """Pair each AIMessage tool call with its ToolMessage result, if resolved yet."""
+    responses = {
+        message.tool_call_id: str(message.text)
+        for message in messages
+        if isinstance(message, ToolMessage)
+    }
+    return [
+        ToolCallResult(
+            id=tc["id"],
+            name=tc["name"],
+            args=tc["args"],
+            response=responses.get(tc["id"]),
+        )
+        for message in messages
+        if isinstance(message, AIMessage)
+        for tc in message.tool_calls
+    ]

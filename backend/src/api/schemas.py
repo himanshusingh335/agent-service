@@ -14,10 +14,18 @@ class PendingAction(BaseModel):
     description: str | None = None
 
 
+class ToolCallResult(BaseModel):
+    id: str
+    name: str
+    args: dict
+    response: str | None = None
+
+
 class ChatResponse(BaseModel):
     session_id: str
     reply: str | None = None
     pending_actions: list[PendingAction] | None = None
+    tool_calls: list[ToolCallResult] | None = None
 
 
 class Decision(BaseModel):
