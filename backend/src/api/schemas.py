@@ -66,3 +66,12 @@ class SessionLogsResponse(BaseModel):
     total: int
     limit: int
     offset: int
+
+
+class SessionInfo(BaseModel):
+    session_id: str
+    last_modified: str
+
+
+class SessionListResponse(BaseModel):
+    sessions: list[SessionInfo]
