@@ -52,6 +52,7 @@ class AgentServiceClient:
         session_id: str,
         *,
         level: str | None = None,
+        logger: str | None = None,
         start_time: str | None = None,
         end_time: str | None = None,
         limit: int = 200,
@@ -60,6 +61,8 @@ class AgentServiceClient:
         params: dict[str, Any] = {"limit": limit, "offset": offset}
         if level:
             params["level"] = level
+        if logger:
+            params["logger"] = logger
         if start_time:
             params["start_time"] = start_time
         if end_time:

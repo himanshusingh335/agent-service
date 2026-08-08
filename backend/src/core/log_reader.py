@@ -29,6 +29,7 @@ def _parse_timestamp(value: str) -> datetime:
 def read_session_logs(
     session_id: str,
     level: str | None,
+    logger: str | None,
     start_time: datetime | None,
     end_time: datetime | None,
     limit: int,
@@ -52,6 +53,8 @@ def read_session_logs(
                 if entry.get("session_id") != session_id:
                     continue
                 if level is not None and entry.get("level") != level:
+                    continue
+                if logger is not None and entry.get("logger") != logger:
                     continue
 
                 if start_time is not None or end_time is not None:

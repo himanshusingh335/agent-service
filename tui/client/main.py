@@ -103,6 +103,10 @@ def view_logs(client: AgentServiceClient) -> None:
         choices=["", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
         default="",
     )
+    logger_filter = Prompt.ask(
+        "[bold cyan]logger[/bold cyan] (blank = all, e.g. agent.mcp, httpx, groq)",
+        default="",
+    ).strip()
     start_time = Prompt.ask(
         "[bold cyan]start time[/bold cyan] (ISO, e.g. 2026-08-08T00:00:00, blank = no lower bound)",
         default="",
@@ -120,6 +124,7 @@ def view_logs(client: AgentServiceClient) -> None:
         result = client.get_logs(
             session_id,
             level=level or None,
+            logger=logger_filter or None,
             start_time=start_time or None,
             end_time=end_time or None,
             limit=limit,
@@ -137,11 +142,12 @@ def view_logs(client: AgentServiceClient) -> None:
     for entry in logs:
         ts = entry.get("timestamp", "")
         lvl = entry.get("level", "")
+        logger_name = entry.get("logger", "")
         msg = entry.get("message", "")
         role = entry.get("role")
         style = ROLE_STYLE.get(role)
         prefix = f" [{style}]{role}:[/{style}]" if role and style else f" {role}:" if role else ""
-        console.print(f"[dim]{ts}[/dim] [{lvl}]{prefix} {msg}")
+        console.print(f"[dim]{ts} [{logger_name}][/dim] [{lvl}]{prefix} {msg}")
     console.print(f"\n[dim]showing {len(logs)} of {result.get('total', len(logs))} entries[/dim]\n")
 
 
