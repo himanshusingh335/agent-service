@@ -71,5 +71,10 @@ class AgentServiceClient:
         response.raise_for_status()
         return response.json()
 
+    def list_sessions(self) -> dict[str, Any]:
+        response = self._client.get("/chat/sessions")
+        response.raise_for_status()
+        return response.json()
+
     def close(self) -> None:
         self._client.close()

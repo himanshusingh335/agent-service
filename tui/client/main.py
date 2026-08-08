@@ -5,6 +5,8 @@ import uuid
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+from prompt_toolkit import prompt as pt_prompt
+from prompt_toolkit.completion import Completer, Completion, FuzzyCompleter
 from rich.console import Console
 from rich.markup import escape
 from rich.prompt import Prompt
@@ -14,6 +16,37 @@ from api_client import AgentServiceClient
 console = Console()
 
 ROLE_STYLE = {"user": "bold green", "human": "bold green", "ai": "bold magenta", "tool": "dim"}
+
+
+class _SessionCompleter(Completer):
+    def __init__(self, sessions: list[dict]):
+        self._sessions = sessions
+
+    def get_completions(self, document, complete_event):
+        for session in self._sessions:
+            yield Completion(
+                session["session_id"],
+                start_position=-len(document.text_before_cursor),
+                display_meta=session.get("last_modified", ""),
+            )
+
+
+def _pick_session_id(client: AgentServiceClient) -> str:
+    """Prompt for a session id, live-filtering against known sessions as the user types.
+
+    Falls back to a plain text prompt if the session list can't be fetched or is empty;
+    typing an id that isn't in the list is always accepted.
+    """
+    try:
+        sessions = client.list_sessions().get("sessions") or []
+    except Exception:
+        sessions = []
+
+    if not sessions:
+        return Prompt.ask("[bold cyan]session id[/bold cyan]").strip()
+
+    completer = FuzzyCompleter(_SessionCompleter(sessions))
+    return pt_prompt("session id> ", completer=completer, complete_while_typing=True).strip()
 
 
 def _handle_pending(client: AgentServiceClient, session_id: str, pending_actions: list[dict]) -> str | None:
@@ -94,7 +127,7 @@ def run_chat(client: AgentServiceClient) -> None:
 
 
 def view_logs(client: AgentServiceClient) -> None:
-    session_id = Prompt.ask("[bold cyan]session id[/bold cyan]").strip()
+    session_id = _pick_session_id(client)
     if not session_id:
         console.print("[bold red]error:[/bold red] session id is required\n")
         return
@@ -156,7 +189,7 @@ def view_logs(client: AgentServiceClient) -> None:
 
 
 def view_session(client: AgentServiceClient) -> None:
-    session_id = Prompt.ask("[bold cyan]session id[/bold cyan]").strip()
+    session_id = _pick_session_id(client)
     if not session_id:
         console.print("[bold red]error:[/bold red] session id is required\n")
         return
