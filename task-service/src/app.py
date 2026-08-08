@@ -1,13 +1,20 @@
+import logging
+
 from fastapi import FastAPI, HTTPException
 from fastapi_mcp import FastApiMCP
 
+from core.logging import configure_logging
 from db import add_task, init_db, remove_task
 from models import TaskCreate, TaskDeleted, TaskOut
 
+logger = logging.getLogger("task-mcp")
+
 
 def create_app() -> FastAPI:
+    configure_logging()
     app = FastAPI(title="task-service")
     init_db()
+    logger.info("task-service initialized")
 
     @app.post("/tasks", operation_id="add_task", response_model=TaskOut)
     def create_task(task: TaskCreate) -> TaskOut:

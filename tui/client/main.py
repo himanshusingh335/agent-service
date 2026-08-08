@@ -104,7 +104,7 @@ def view_logs(client: AgentServiceClient) -> None:
         default="",
     )
     logger_filter = Prompt.ask(
-        "[bold cyan]logger[/bold cyan] (blank = all, e.g. agent.mcp, httpx, groq)",
+        "[bold cyan]logger[/bold cyan] (blank = all, e.g. task-agent, httpx, groq)",
         default="",
     ).strip()
     start_time = Prompt.ask(

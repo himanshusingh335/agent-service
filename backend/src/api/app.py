@@ -8,7 +8,7 @@ from agent.graph import build_agent
 from api.routes import chat, history, logs
 from core.logging import configure_logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("task-agent")
 
 
 @asynccontextmanager

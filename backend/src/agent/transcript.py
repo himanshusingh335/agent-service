@@ -2,7 +2,7 @@ import logging
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
 
-transcript_logger = logging.getLogger("agent.transcript")
+transcript_logger = logging.getLogger("task-agent")
 
 
 def log_message(message: BaseMessage) -> None:
